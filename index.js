@@ -12,7 +12,9 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(express.static("dist"))
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: process.env.VITE_NODE_ENV === "devlopement"
+        ? "http://localhost:5173"
+        : "https://fullstack-portfolio-ecaz.onrender.com",
     credentials: true             //For Cookie Send and Get
 }))
 
