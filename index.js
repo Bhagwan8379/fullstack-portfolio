@@ -21,7 +21,8 @@ app.use("/api/admin", adminProtected, require("./routes/admin.route"))
 app.use("/api/public", require("./routes/public.routes"))
 
 app.use("*", (req, res) => {
-    res.status(404).json({ message: "Resource Not Found" })
+    res.sendFile(path.join(__dirname, "dist", "index.html"))
+    // res.status(404).json({ message: "Resource Not Found" })
 })
 app.use((err, req, res, next) => {
     console.log(err)
