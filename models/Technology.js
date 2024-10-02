@@ -1,9 +1,8 @@
 const mongoose = require("mongoose")
 
-const technologySchema = new mongoose.Schema({
-    name: { type: String },
-    category: { type: String },
+const techSchema = new mongoose.Schema( {
+    name: { type: String},
+    category: { type: String},
+}, { timestamps: true } )
 
-}, { timestamps: true })
-
-module.exports = mongoose.model("technology", technologySchema)
+module.exports = mongoose.model("technology", techSchema)  

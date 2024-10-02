@@ -7,9 +7,9 @@ const Storage = multer.diskStorage({
         cb(null, fn)
     }
 })
-const upload = multer({ storage: Storage }).single("hero")
+const upload = multer({ storage: Storage }).single("images")
 
-const projectUpload = multer({ storage: Storage }).fields([
+const projectUpload = multer({  storage: Storage }).fields([
     { name: "images", maxCount: 1 },
     { name: "screenshots-Web-main", maxCount: 1 },
     { name: "screenshots-Web-other", maxCount: 5 },
@@ -18,4 +18,4 @@ const projectUpload = multer({ storage: Storage }).fields([
     { name: "sections-web-images", maxCount: 1 },
     { name: "sections-mobile-images", maxCount: 1 },
 ])
-module.exports = { upload, projectUpload }
+module.exports = {upload, projectUpload}

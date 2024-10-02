@@ -1,51 +1,47 @@
 const asyncHandler = require("express-async-handler")
 const bcrypt = require("bcryptjs")
 const User = require("../models/User")
-const jwt = require("jsonwebtoken")
-const { checkEmpty } = require("../utils/checkEmpty")
+const JWT = require("jsonwebtoken")
+const { checkEmpty } = require("../utils/cheackEmpty")
 
-exports.registerUser = asyncHandler(async (req, res) => {
-    const pass = await bcrypt.hash(req.body.password, 10)
-    await User.create({ ...req.body, password: pass })
-    res.json({ message: "User Register Success" })
+exports.registerUser = asyncHandler(async( req, res ) => {
+    const pass =  await bcrypt.hash(req.body.password, 10 )
+    await User.create({...req.body, password: pass })
+    res.json({message:"User Register Success"})
 })
-
-exports.loginUser = asyncHandler(async (req, res) => {
-    // check empty
+exports.loginUser = asyncHandler(async(req,res)=>{
+    // Cheack Emapty
     const { email, password } = req.body
-    const { error, isError } = checkEmpty({ email, password })
-    if (isError) {
-        return res.status(401).json({ message: "All Firlds Required", error })
+    const {error,isError} = checkEmpty({ email, password })
+    if(isError){
+        return res.status(401).json({message:"All Fields Required", error })
     }
-
-    // verify email
+    // Verify email
     const result = await User.findOne({ email })
     if (!result) {
-        return res.status(401).json({ message: "Invalid Email", error })
+        return res.status(401).json({message:"Invalid Email"})
     }
-
-    // verify password
+    // Verify pasword    
     const verify = await bcrypt.compare(password, result.password)
     if (!verify) {
-        return res.status(401).json({ message: "Invalid Password", error })
+        return res.status(401).json({message:"Invalid Password"})
     }
-
-    // create token
-    const token = jwt.sign({ userId: result._id }, process.env.JWT_KEY, { expiresIn: "1d" })
-
-    // send cookie
-    res.cookie("user", token, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 })
-
-    // send response
-    res.json({
-        message: "User Login Success", result: {
-            _id: result._id,
-            email: result.email,
-            name: result.name,
-        }
+    // create Token
+    const Token =  JWT.sign({ userId: result._id }, process.env.JWT_KEY, { expiresIn: "1d" })
+    // send Cookie
+    res.cookie("user", Token,{
+        httpOnly:true,
+        maxAge: 1000 * 60 * 60 * 24
     })
+    // send Responce
+    res.json({message:"User Login Success",result:{
+        _id:result._id,
+        email:result.email,
+        name:result.name,
+    }})
 })
-exports.logoutUser = asyncHandler(async (req, res) => {
+
+exports.logoutUser = asyncHandler(async( req, res ) => {
     res.clearCookie("user")
-    res.json({ message: "User LogOut Success" })
+    res.json({message:"User Logout Success"})
 })

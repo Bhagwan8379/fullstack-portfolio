@@ -1,46 +1,40 @@
 const asyncHandler = require("express-async-handler")
-const { checkEmpty } = require("../utils/checkEmpty")
+const { checkEmpty } = require("../utils/cheackEmpty")
 const Technology = require("../models/Technology")
 const Social = require("../models/Social")
-const Carasoul = require("../models/Carasoul")
+const Carousel = require("../models/Carousel")
+const cloudinary  = require("../utils/cloudinary.config")
+const {upload, projectUpload} = require("../utils/upload")
 const path = require("path")
-const cloudinary = require("../utils/cloudinary.config")
-const { upload, projectUpload } = require("../utils/upload")
 const Projects = require("../models/Projects")
 
-
-exports.addTechnology = asyncHandler(async (req, res) => {
-    const { name, category } = req.body
-    const { isError, error } = checkEmpty({ name, category })
+// Technology
+exports.addTechnology = asyncHandler (async (req, res) => {
+    const { name, category }= req.body
+    const {error ,isError}= checkEmpty({name, category })
     if (isError) {
-        return res.status(400).json({ message: "All Fields Required", error })
+        return res.status(400).json({message:"ALL Feilds Required.",error:error})
     }
-    await Technology.create({ name, category })
-    res.json({ message: "Technology Created Success" })
+    await Technology.create({name, category})
+    res.json({message:"Technology Create Success"})
 })
-exports.getTechnology = asyncHandler(async (req, res) => {
+exports.getTechnology = asyncHandler (async (req, res) => {
     const result = await Technology.find()
-    res.json({ message: "Technology Get Success", result })
+    res.json({message:"Technology Fetch Success", result })
 })
-exports.updateTechnology = asyncHandler(async (req, res) => {
-    const { id } = req.params
-    await Technology.findByIdAndUpdate(id, req.body)
-    res.json({ message: "Technology Updated Success" })
+exports.updateTechnology = asyncHandler (async (req, res) => {
+    await  Technology.findByIdAndUpdate(req.params.id, req.body)
+    res.json({message:"Technology Update Success"})
 })
-exports.deleteTechnology = asyncHandler(async (req, res) => {
-    const { id } = req.params
-    await Technology.findByIdAndDelete(id)
-    res.json({ message: "Technology Deleted Success" })
+exports.deleteTechnology = asyncHandler (async (req, res) => {
+    await  Technology.findByIdAndDelete(req.params.id)
+    res.json({message:"Technology Delete Success"})
 })
-
-
 //   SOCIAL MEDIA
-
 exports.addSocial = asyncHandler(async (req, res) => {
     await Social.create(req.body)
     res.json({ message: "SocialMedia Added Success" })
 })
-
 exports.getSocial = asyncHandler(async (req, res) => {
     const result = await Social.find()
     res.json({ message: "SocialMedia Fetch Success", result })
@@ -55,161 +49,168 @@ exports.deleteSocial = asyncHandler(async (req, res) => {
     await Social.findByIdAndDelete(id)
     res.json({ message: "SocialMedia Deleted Success" })
 })
-
-
-
-
+// Carousel
+exports.getAllCarousel = asyncHandler(async (req, res) => {
+    const result = await Carousel.find()
+    res.status(200).json({ message: "blog fetch success", result })
+})
 exports.addCarousel = asyncHandler(async (req, res) => {
-    upload(req, res, async err => {
-        const { caption } = req.body
-        const { isError, error } = checkEmpty({ caption })
-        if (isError) {
-            return res.status(400).json({ message: "All Fiel Required", error })
-        } if (!req.file) {
-            return res.status(400).json({ message: " hero image is Required" })
-        }
-        console.log(req.file);
-
-        const { secure_url } = await cloudinary.uploader.upload(req.file.path)
-        await Carasoul.create({ ...req.body, hero: secure_url })
-        res.json({ message: "Caresoul Added Success" })
-    })
-
-})
-
-exports.getCarousel = asyncHandler(async (req, res) => {
-
-    const result = await Carasoul.find()
-    res.json({ message: "Carousel Fetch Success", result })
-})
-
-exports.updateCarousel = asyncHandler(async (req, res) => {
-    upload(req, res, async err => {
+    upload(req, res, async (err) => {
         if (err) {
-            console.log(err);
-            return res.status(400).json({ message: "multer Error", error: err.message })
+            console.log(err)
+            return res.status(400).json({ message: "upload Error",error: err })
         }
-        const { id } = req.params
-        if (req.file) {
-            const result = await Carasoul.findById(id)
-            await cloudinary.uploader.destroy(path.basename(result.hero))
-            const { secure_url } = await cloudinary.uploader.upload(req.file.path)
-            await Carasoul.findByIdAndUpdate(id, { caption: req.body.caption, hero: secure_url })
-            res.json({ message: "Caresoul Updated Success" })
+        console.log(req.file)
+        if (!req.file) {
+            return res.status(400).json({ message: "Hero Image Required" })
         }
-        await Carasoul.findByIdAndUpdate(id, { caption: req.body.caption })
-        // res.json({ message: "Caresoul Updated Success" })
+        const { secure_url } = await cloudinary.uploader.upload(req.file.path)
+        const result = await Carousel.create({ ...req.body, hero: secure_url })
+        res.json({ message: "Carousel Add Success", result })
     })
 })
+exports.updateCarousel = asyncHandler(async (req, res) => {
+    try {
+        upload(req, res, async (err) => {
+            if (err) {
+                return res.status(400).json({ message: "Multer error" });
+            }
 
+            const { id } = req.params;
+
+            if (req.file) {
+                // Check if the carousel item exists
+                const result = await Carousel.findById(id);
+                if (!result) {
+                    return res.status(404).json({ message: "Carousel item not found" });
+                }
+
+                // Delete old image from Cloudinary
+                console.log(result);
+                try {
+                    
+                    await cloudinary.uploader.destroy(path.basename(result.hero));
+                } catch (cloudinaryErr) {
+                    return res.status(500).json({ message: "Error deleting image from Cloudinary" });
+                }
+
+                // Upload new image to Cloudinary
+                let secure_url;
+                try {
+                    const uploadResult = await cloudinary.uploader.upload(req.file.path);
+                    secure_url = uploadResult.secure_url;
+                } catch (uploadErr) {
+                    return res.status(500).json({ message: "Error uploading image to Cloudinary" });
+                }
+
+                // Update carousel item with new image URL
+                await Carousel.findByIdAndUpdate(id, { caption: req.body.caption, hero: secure_url });
+            } else {
+                // Update carousel item without changing the image
+                await Carousel.findByIdAndUpdate(id, { caption: req.body.caption });
+            }
+
+            res.json({ message: "Carousel update success" });
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
 exports.deleteCarousel = asyncHandler(async (req, res) => {
     const { id } = req.params
-    const result = await Carasoul.findById(id)
+    const result = await Carousel.findById(id)
     console.log(result);
 
     await cloudinary.uploader.destroy(path.basename(result.hero))
-    await Carasoul.findByIdAndDelete(id)
+    await Carousel.findByIdAndDelete(id)
     res.json({ message: "Carousel Deleted Success" })
 })
-
-
-
-
-
+// ADD PROJECTS
 exports.addProject = asyncHandler(async (req, res) => {
     projectUpload(req, res, async (err) => {
         if (err) {
             console.log(err);
-            return res.status(400).json({ message: "Multer Error" })
+            return res.status(400).json({message:"Multer Error"})
         }
-        // const {error,isError } = checkEmpty({title, shortdesc, desc, duration, learning, images})
         if (
-            !req.files["images"] ||
-            !req.files["screenshots-Web-main"] ||
-            !req.files["screenshots-Web-other"] ||
+            !req.files["images"]                  ||
+            !req.files["screenshots-Web-main"]    ||
+            !req.files["screenshots-Web-other"]   ||
             !req.files["screenshots-Mobile-main"] ||
-            !req.files["screenshots-Mobile-other"] ||
-            !req.files["sections-web-images"] ||
+            !req.files["screenshots-Mobile-other"]||
+            !req.files["sections-web-images"]     ||
             !req.files["sections-mobile-images"]
         ) {
-            return res.status(400).json({ message: "All Images Required" })
+            return res.status(400).json({message:"All Images Required"})
         }
         let images = {}
         for (const key in req.files) {
-            if (key === "screenshots-Web-other" || key === "screenshots-Mobile-other") {
+            if (key === "screenshots-Web-other" || key === "screenshots-Mobile-other") {   
                 if (!images[key]) {
                     images[key] = []
-                }
-                const uploadAllImagesPromises = []
+                } 
+                const uploadALLImages = []
                 for (const item of req.files[key]) {
-                    uploadAllImagesPromises.push(cloudinary.uploader.upload(item.path))
+                    uploadALLImages.push(cloudinary.uploader.upload(item.path))
                 }
-                const allData = await Promise.all(uploadAllImagesPromises)
-                images[key] = allData.map(item => item.secure_url)
+                const allData = await Promise.all(uploadALLImages)
+                images[key] = allData.map(item=>item.secure_url)
             } else {
                 const { secure_url } = await cloudinary.uploader.upload(req.files[key][0].path)
                 images[key] = secure_url
             }
         }
-        // console.log(images);
-        // console.log(req.files);
-        // console.log(req.body);
-
         await Projects.create({
             title: req.body.title,
             shortdesc: req.body.shortdesc,
-            desc: req.body.desc,
-            duration: req.body.duration,
+            desc:req.body.desc,
+            duration:req.body.duration,
             learning: req.body.learning,
-            images: images.images,
-            live: req.body.live,
-            source: req.body.source,
+            images:images.images,
+            live:req.body.live,
+            source:req.body.source,
             isMobileApp: req.body.isMobileApp,
             technologies: {
-                frontend: req.body.FrontEnd,
-                backend: req.body.BackEnd,
-                mobile: req.body.Mobile,
-                collabration: req.body.Collabration,
-                hoisting: req.body.Hoisting,
+                frontend:req.body.FrontEnd,
+                backend:req.body.BackEnd,
+                mobile:req.body.Mobile,
+                collabration:req.body.Collabration,
+                hoisting:req.body.Hoisting,
             },
             sections: {
                 web: [
                     {
-                        title: req.body["sections-web-title"],
-                        desc: req.body["sections-web-desc"],
-                        images: images["sections-web-images"],
+                        title: req.body["sections-web-title"], 
+                        desc: req.body["sections-web-desc"], 
+                        images: images["sections-web-images"], 
                     }
                 ],
                 mobile: [
                     {
-                        title: req.body["sections-mobile-title"],
-                        desc: req.body["sections-mobile-desc"],
-                        images: images["sections-mobile-images"],
+                        title: req.body["sections-mobile-title"], 
+                        desc: req.body["sections-mobile-desc"], 
+                        images: images["sections-mobile-images"], 
                     }
                 ],
             },
-            screenshots: {
-                web: {
-                    main: images["screenshots-Web-main"],
-                    other: images["screenshots-Web-other"].map(item => item)
-                },
-                mobile: {
-                    main: images["screenshots-Mobile-main"],
-                    other: images["screenshots-Mobile-other"] && images["screenshots-Mobile-other"].map(item => item)
-                }
+            screenshots: {  
+                    web: {
+                        main: images["screenshots-Web-main"],
+                        other: images["screenshots-Web-other"]
+                    },
+                    mobile: {
+                        main:images["screenshots-Mobile-main"],
+                        other: images["screenshots-Mobile-other"]
+                    }
             },
         })
         res.json({ message: "Project Add Success...!" })
     })
 })
-
-
-
-exports.fetchProjects = asyncHandler(async (req, res) => {
+exports.fetchProjects = asyncHandler(async(req,res)=> {
     const result = await Projects.find()
-    res.json({ message: "Project Fetch Success...!", result })
+    res.json({message:"Project Fetch Success...!", result})
 })
-
 exports.deleteProject = asyncHandler(async (req, res) => {
     const { id } = req.params
     const result = await Projects.findById(id)
@@ -218,27 +219,18 @@ exports.deleteProject = asyncHandler(async (req, res) => {
     for (const item of result.sections.web) {
         allImages.push(cloudinary.uploader.destroy(path.basename(item.images)))
     }
-
     for (const item of result.sections.mobile) {
         allImages.push(cloudinary.uploader.destroy(path.basename(item.images)))
     }
-
-
     allImages.push(cloudinary.uploader.destroy(path.basename(result.screenshots.web.main)))
     allImages.push(cloudinary.uploader.destroy(path.basename(result.screenshots.mobile.main)))
-
     for (const item of result.screenshots.web.other) {
         allImages.push(cloudinary.uploader.destroy(path.basename(item)))
     }
-
     for (const item of result.screenshots.mobile.other) {
         allImages.push(cloudinary.uploader.destroy(path.basename(item)))
     }
     await Promise.all(allImages)
     await Projects.findByIdAndDelete(id)
-    res.json({ message: "Project Delete Success...!" })
+    res.json({message:"Project Delete Success...!"})
 })
-
-
-
-

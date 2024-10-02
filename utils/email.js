@@ -24,4 +24,4 @@ const sendEmail = ({ subject, to, message }) => new Promise((resolve, reject) =>
     })
 })
 
-module.exports = sendEmail
+module.exports = sendEmail  
