@@ -11,7 +11,7 @@ const app = express()
 app.use(cors({
     origin: process.env.NODE_ENV === "development"
         ? "http://localhost:5173"
-        : "https://fullstack-my-portfolio.onrender.com",
+        : "https://fullstack-portfolio-ecaz.onrender.com",
     credentials: true
 }))
 
