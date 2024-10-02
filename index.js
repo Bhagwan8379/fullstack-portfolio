@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const path = require("path")
 const { adminProtected } = require("./middleware/Protected")
+// const { adminProtected } = require("./middleware/Protected")
 require("dotenv").config({ path: "./.env" })   // env File Path 
 
 const app = express()
@@ -20,8 +21,8 @@ app.use(express.json())
 app.use(express.static("dist"))
 
 app.use("/api/auth", require("./routes/auth.routes"))
-app.use("/api/admin",adminProtected, require("./routes/admin.routes"))
-app.use("/api/public",require("./routes/public.routes"))
+app.use("/api/admin", adminProtected, require("./routes/admin.routes"))
+app.use("/api/public", require("./routes/public.routes"))
 
 app.use("*", (req, res) => {
     res.sendFile(path.join(__dirname, "dist", "index.html"))
