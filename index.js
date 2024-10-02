@@ -25,7 +25,6 @@ app.use("/api/public", require("./routes/public.routes"))
 
 app.use("*", (req, res) => {
     res.sendFile(path.join(__dirname, "dist", "index.html"))
-    // res.status(404).json({ message: "Resours Not found" })
 })
 app.use((err, req, res, next) => {
     console.log(err)
