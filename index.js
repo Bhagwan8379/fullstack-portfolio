@@ -4,7 +4,6 @@ const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const path = require("path")
 const { adminProtected } = require("./middleware/Protected")
-// const { adminProtected } = require("./middleware/Protected")
 require("dotenv").config({ path: "./.env" })   // env File Path 
 
 const app = express()
