@@ -12,6 +12,7 @@ exports.adminProtected = (req, res, next) => {
             console.log(error);
             return res.status(401).json({ message: "Invalid Token" })
         }
+        // req.user = decode.userId
         req.user = decode.userId
     })
     next()
