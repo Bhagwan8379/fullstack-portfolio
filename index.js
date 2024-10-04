@@ -3,7 +3,7 @@ const mongoose = require("mongoose")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const path = require("path")
-const adminProtected = require("./middleware/Protected")
+const { adminProtected } = require("./middleware/Protected")
 require("dotenv").config({ path: "./.env" })   // env File Path 
 
 const app = express()
@@ -25,6 +25,7 @@ app.use("/api/public", require("./routes/public.routes"))
 
 app.use("*", (req, res) => {
     res.sendFile(path.join(__dirname, "dist", "index.html"))
+    // res.status(404).json({ message: "Resours Not found" })
 })
 app.use((err, req, res, next) => {
     console.log(err)
@@ -33,5 +34,8 @@ app.use((err, req, res, next) => {
 mongoose.connect(process.env.MONGO_URL)
 mongoose.connection.once("open", () => {
     console.log("MONGO CONNECTED")
-    app.listen(process.env.PORT, console.log("SERVER RUNNING 🏃‍♂️"))
+    app.listen(process.env.PORT, console.log("SERVER RUNNING 🏃‍♂"))
 })
+
+
+
